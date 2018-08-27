@@ -107,3 +107,45 @@ module cogWheel(showTrack=true){
   }
 }
 }
+
+!track();
+module track(){
+  $fn=50;
+  
+  //Dimensions
+  ovWdth=36;
+  ovLngth=9.3; //Length of Track from joint center2center
+  ovHght=6; //Height above joint center
+  
+  //joints
+  jointDia=6;
+  jntClrnc=0.5;//clearance between inner and outer joint cylinder
+  inJntWdth=22;//width of inner joint cylinder
+  outJntWdth=(ovWdth-inJntWdth)/2;
+  pinDia=1.75;
+  
+  //
+  
+  
+  
+  fudge=0.1;
+  
+  %translate([-10.7,0,0]) import("Track.stl");
+  
+  
+  rotate([-90,0,0]) difference(){
+    union(){
+      cylinder(d=jointDia,h=ovWdth);
+      rotate([90,0,0]) cube([ovLngth,ovWdth,ovHght]);
+      translate([ovLngth,0,(ovWdth-inJntWdth)/2]) cylinder(d=jointDia,h=inJntWdth);
+    }
+    translate([0,0,-fudge/2]) cylinder(d=pinDia,h=ovWdth-fudge);
+    translate([0,0,(ovWdth-inJntWdth)/2-jntClrnc]) cylinder(d=jointDia+fudge,h=inJntWdth+jntClrnc*2);
+    translate([0,-ovHght/2,outJntWdth+inJntWdth/2]) cube([jointDia,ovHght+fudge,inJntWdth+2*jntClrnc],true);
+    translate([ovLngth,-ovHght/2,outJntWdth/2-fudge/2]) cube([jointDia,ovHght+fudge,outJntWdth+fudge],true);
+    translate([ovLngth,-ovHght/2,ovWdth-outJntWdth/2+fudge/2]) cube([jointDia,ovHght+fudge,outJntWdth+fudge],true);
+  }
+  
+  
+  
+}
