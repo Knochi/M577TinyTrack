@@ -1,19 +1,31 @@
+useN20s=false;
 
+/* [Hidden] */
 M577origDims= [1.37+1.57,0.575*2,0.65];
 factor=60;
 fudge=0.1;
 
 axisWidth= 52;
 
-mirror([0,1,0]){
-translate([-23,-(27.5-19.5+axisWidth/2),0])
-  rotate([-90,180,0]) 
+
+if (useN20s){
+  translate([ 25.20, -26, 11.48 ]) rotate([0,0,90]) import("N20_gear_motor.stl");
+  translate([ -73.09, 26, 11.03 ]) rotate([0,0,-90]) import("N20_gear_motor.stl");  
+}
+else
+{
+translate([ -73.71, 26, 14 ])
+  rotate([90,180,0])
+    translate([-53,-11.2,0])
     import("DC_Motor_20mm.stl");
     
-translate([-28,(27.5-19.2+axisWidth/2),0])
-  rotate([90,0,0]) 
+translate([ 25.78, -26, 14 ])
+  rotate([-90,0,0]) 
+  translate([-53,-11.2,0])
     import("DC_Motor_20mm.stl");
 }
+
+
 
 %translate([-110,0,M577origDims[2]*factor/2-20])
 rotate(90)
@@ -29,7 +41,7 @@ import("WEMOS_D1mini.stl");
 
 
 //batteries
-translate([-60,-12,2]) batX1();
+translate([-60,-14,2]) batX1();
 
 //FPV Cam    
 translate([40,14,22])
@@ -37,7 +49,7 @@ translate([40,14,22])
   FPV1000TVL();
 
 //Track
-translate([25,-40,12]) rotate([90,90,0]) cogWheel();
+translate([25,-28,12]) rotate([90,90,0]) cogWheel();
   
 module motorShield(){
   cube([59,43,19],true);
@@ -50,7 +62,7 @@ module bat18650(){
 
 module batX1(){
   //Extron 650mAh 2S LiPo
-  translate([0,0,18/2]) cube([50,25,18],true);
+  translate([0,0,25/2]) cube([50,18,25],true);
 }
 
 module FPV(size="mini"){
@@ -85,7 +97,7 @@ module cogWheel(showTrack=true){
   ovThick=10;
   X=5;
   
-  impTrackOff=[-20,0,-18];
+  impTrackOff=[-20,0,-5];
   trackDia=7;
   
   if (showTrack)
@@ -93,59 +105,105 @@ module cogWheel(showTrack=true){
   rotate(ang)  
     translate([ovDia/2,0,ovThick/2]) 
       rotate(75) translate(impTrackOff) 
-        rotate([90,0,0]) import("Track.stl");
+        rotate([90,0,0]) translate([10.7,0,0]) track();//import("Track.stl");
   
   difference(){
-    cylinder(d=ovDia-1,h=ovThick);
-    translate([0,0,-fudge/2]) cylinder(d=bearingDia,h=bearingThick+fudge);
-    translate([0,0,-fudge/2]) cylinder(d=bearingDia-4,h=ovThick+fudge);
+    cylinder(d=ovDia-1,h=ovThick,center=true);
+    cylinder(d=bearingDia,h=bearingThick+fudge,center=true);
+    cylinder(d=bearingDia-4,h=ovThick+fudge,center=true);
     
     for (ang=[0:30:330]){
       rotate(ang)
         translate([ovDia/2,0,-fudge/2]) 
-          cylinder(d=trackDia,h=bearingThick*1.5+fudge);
+          cylinder(d=trackDia,h=bearingThick*1.5+fudge,center=true);
   }
 }
 }
 
-!track();
+//!track();
 module track(){
   $fn=50;
   
   //Dimensions
-  ovWdth=36;
+  ovWdth=20; //36
   ovLngth=9.3; //Length of Track from joint center2center
-  ovHght=6; //Height above joint center
+  ovHght=5;    //body height above joint center
   
   //joints
-  jointDia=6;
+  jntDia=6;
   jntClrnc=0.5;//clearance between inner and outer joint cylinder
-  inJntWdth=22;//width of inner joint cylinder
+  inJntWdth=ovWdth*0.65;//width of inner joint cylinder
   outJntWdth=(ovWdth-inJntWdth)/2;
+  lckDpth=(jntDia+1)/2; //locking depth below joint center
+  lckWdth=inJntWdth/3; //width of the locking featuere
   pinDia=1.75;
   
-  //
-  
-  
+  //Profile
+  prfHght=1;   //Height of Profile
+  prfAng=atan((jntDia/2)/(inJntWdth/2));     //Angle of Profile
+  prfX1=-jntDia/2;
+  prfY1=tan(90-prfAng)*(jntDia/2);
+  prfX2=tan(prfAng)*(ovWdth/2);
+  prfY2=ovWdth;
+  prfLngth=prfX2/sin(prfAng);
+  prfDia=2.5;
+  echo(prfAng,prfLngth);
   
   fudge=0.1;
   
-  %translate([-10.7,0,0]) import("Track.stl");
+  //%rotate([90,0,0])translate([-10.7,0,0]) import("Track.stl");
   
-  
-  rotate([-90,0,0]) difference(){
+  translate([0,-ovWdth/2,0])
+  rotate([-90,0,0]) 
+    difference(){
     union(){
-      cylinder(d=jointDia,h=ovWdth);
+      cylinder(d=jntDia,h=ovWdth);
       rotate([90,0,0]) cube([ovLngth,ovWdth,ovHght]);
-      translate([ovLngth,0,(ovWdth-inJntWdth)/2]) cylinder(d=jointDia,h=inJntWdth);
+      translate([ovLngth,0,(ovWdth-inJntWdth)/2-fudge/2]) cylinder(d=jntDia,h=inJntWdth+fudge);
+      difference(){
+        translate([0,-fudge,outJntWdth]) cube([ovLngth,(jntDia+1)/2+fudge,inJntWdth]);
+        translate([ovLngth,(jntDia+1)/2,outJntWdth-fudge/2]) rotate([0,0,180]) chamfer(0.5,inJntWdth+fudge);
+        translate([ovLngth,lckDpth,ovWdth/2]) 
+          rotate([-90,90,90]) linear_extrude(ovLngth) 
+            polygon([[-lckDpth-lckWdth/2,-fudge/2],
+                     [-lckWdth/2,lckDpth],
+                     [lckWdth/2,lckDpth],
+                     [lckWdth/2+lckDpth,-fudge/2]]);
+      }
     }
-    translate([0,0,-fudge/2]) cylinder(d=pinDia,h=ovWdth-fudge);
-    translate([0,0,(ovWdth-inJntWdth)/2-jntClrnc]) cylinder(d=jointDia+fudge,h=inJntWdth+jntClrnc*2);
-    translate([0,-ovHght/2,outJntWdth+inJntWdth/2]) cube([jointDia,ovHght+fudge,inJntWdth+2*jntClrnc],true);
-    translate([ovLngth,-ovHght/2,outJntWdth/2-fudge/2]) cube([jointDia,ovHght+fudge,outJntWdth+fudge],true);
-    translate([ovLngth,-ovHght/2,ovWdth-outJntWdth/2+fudge/2]) cube([jointDia,ovHght+fudge,outJntWdth+fudge],true);
+    translate([0,0,-fudge/2]) cylinder(d=pinDia,h=ovWdth+fudge);
+    translate([ovLngth,0,-fudge/2]) cylinder(d=pinDia,h=ovWdth+fudge);
+    translate([0,0,(ovWdth-inJntWdth)/2-jntClrnc]) cylinder(d=jntDia,h=inJntWdth+jntClrnc*2);
+    translate([0,(-ovHght+(jntDia+1)/2)/2,outJntWdth+inJntWdth/2]) cube([jntDia,ovHght+(jntDia+1)/2+fudge,inJntWdth+2*jntClrnc],true);
+    translate([ovLngth,(-ovHght+lckDpth)/2,outJntWdth/2-fudge/2]) cube([jntDia,ovHght+lckDpth+fudge,outJntWdth+fudge],true);
+    translate([ovLngth,(-ovHght+lckDpth)/2,ovWdth-outJntWdth/2+fudge/2]) cube([jntDia,ovHght+lckDpth+fudge,outJntWdth+fudge],true);
+    
   }
-  
-  
+  translate([ovLngth-1.5,0,ovHght]) rotate([-90,0,prfAng]) 
+    profile(prfLngth,prfDia);
+  translate([ovLngth-1.5,0,ovHght]) rotate([90,0,-prfAng]) 
+    profile(prfLngth,prfDia);
+}
+
+//chamfer(3,20);
+module chamfer(s,l){
+  linear_extrude(l)
+    polygon([[-fudge/2,-fudge/2],[-fudge/2,s+fudge/2],[s+fudge/2,-fudge/2]]);
+}
+
+module profile(lngth,dia){
+  union(){
+    translate([0,0,0]) sphere(d=dia);
+    translate([0,0,0]) cylinder(d=dia,h=lngth-dia/2);
+    translate([0,0,lngth-dia/2]) sphere(d=dia);
+  }
+}
+
+
+module microStepper(){
+  $fn=50;
+  //Pollin 310776
+  cylinder(d=1.5,h=15); //axis
+  cylinder(d=10,h=12); //motor
   
 }
