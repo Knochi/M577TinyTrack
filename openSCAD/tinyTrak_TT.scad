@@ -88,12 +88,13 @@ module D1mini(){
   translate([0,0,height/2]) cube([25.6,34.2,height],true);
 }
 
-
+*cogWheel(true);
 module cogWheel(showTrack=true){
   $fn=50;
   bearingDia=22;
   bearingThick=7;
-  ovDia=36.2;
+  ovDia=30; //
+  ovDiaOffset=1.5;
   ovThick=10;
   X=5;
   
@@ -108,8 +109,9 @@ module cogWheel(showTrack=true){
         rotate([90,0,0]) translate([10.7,0,0]) track();//import("Track.stl");
   
   difference(){
-    cylinder(d=ovDia-1,h=ovThick,center=true);
-    cylinder(d=bearingDia,h=bearingThick+fudge,center=true);
+    //cylinder(d=ovDia-ovDiaOffset,h=ovThick,center=true);
+    chamfWheel(ovDia-ovDiaOffset,ovThick,(ovThick-4)/2);
+    translate([0,0,-(ovThick+fudge)/2])cylinder(d=bearingDia,h=bearingThick+fudge);
     cylinder(d=bearingDia-4,h=ovThick+fudge,center=true);
     
     for (ang=[0:30:330]){
@@ -120,7 +122,10 @@ module cogWheel(showTrack=true){
 }
 }
 
-//!track();
+//projection(true) 
+  //rotate([0,-90,0]) 
+    *translate([-3.1,0,0]) 
+      track();
 module track(){
   $fn=50;
   
@@ -134,10 +139,10 @@ module track(){
   jntClrnc=0.5;//clearance between inner and outer joint cylinder
   inJntWdth=ovWdth*0.65;//width of inner joint cylinder
   outJntWdth=(ovWdth-inJntWdth)/2;
-  lckDpth=(jntDia+1)/2; //locking depth below joint center
-  lckWdth=inJntWdth/3; //width of the locking featuere
+  lckDpth=(jntDia)/2; //locking depth below joint center
+  lckWdth=inJntWdth/3; //width of the locking feature
   pinDia=1.75;
-  
+  echo("lckWdth",lckWdth);
   //Profile
   prfHght=1;   //Height of Profile
   prfAng=atan((jntDia/2)/(inJntWdth/2));     //Angle of Profile
@@ -160,8 +165,9 @@ module track(){
       cylinder(d=jntDia,h=ovWdth);
       rotate([90,0,0]) cube([ovLngth,ovWdth,ovHght]);
       translate([ovLngth,0,(ovWdth-inJntWdth)/2-fudge/2]) cylinder(d=jntDia,h=inJntWdth+fudge);
+      
       difference(){
-        translate([0,-fudge,outJntWdth]) cube([ovLngth,(jntDia+1)/2+fudge,inJntWdth]);
+        translate([0,-fudge,outJntWdth]) cube([ovLngth,lckDpth+fudge,inJntWdth]);
         translate([ovLngth,(jntDia+1)/2,outJntWdth-fudge/2]) rotate([0,0,180]) chamfer(0.5,inJntWdth+fudge);
         translate([ovLngth,lckDpth,ovWdth/2]) 
           rotate([-90,90,90]) linear_extrude(ovLngth) 
@@ -169,12 +175,12 @@ module track(){
                      [-lckWdth/2,lckDpth],
                      [lckWdth/2,lckDpth],
                      [lckWdth/2+lckDpth,-fudge/2]]);
-      }
-    }
+      }//diff
+    }//union
     translate([0,0,-fudge/2]) cylinder(d=pinDia,h=ovWdth+fudge);
     translate([ovLngth,0,-fudge/2]) cylinder(d=pinDia,h=ovWdth+fudge);
     translate([0,0,(ovWdth-inJntWdth)/2-jntClrnc]) cylinder(d=jntDia,h=inJntWdth+jntClrnc*2);
-    translate([0,(-ovHght+(jntDia+1)/2)/2,outJntWdth+inJntWdth/2]) cube([jntDia,ovHght+(jntDia+1)/2+fudge,inJntWdth+2*jntClrnc],true);
+    translate([0,(-ovHght+lckDpth)/2,outJntWdth+inJntWdth/2]) cube([jntDia,ovHght+lckDpth+fudge,inJntWdth+2*jntClrnc],true);
     translate([ovLngth,(-ovHght+lckDpth)/2,outJntWdth/2-fudge/2]) cube([jntDia,ovHght+lckDpth+fudge,outJntWdth+fudge],true);
     translate([ovLngth,(-ovHght+lckDpth)/2,ovWdth-outJntWdth/2+fudge/2]) cube([jntDia,ovHght+lckDpth+fudge,outJntWdth+fudge],true);
     
@@ -199,6 +205,18 @@ module profile(lngth,dia){
   }
 }
 
+*chamfWheel(23,10,2);
+module chamfWheel(dia, thck, chamf){
+  $fn=100;
+  rotate_extrude()
+  polygon([[0,thck/2],
+           [dia/2-chamf,thck/2],
+           [dia/2,thck/2-chamf],
+           [dia/2,-thck/2+chamf],
+           [dia/2-chamf,-thck/2],
+           [0,-thck/2]]
+          );
+}
 
 module microStepper(){
   $fn=50;
