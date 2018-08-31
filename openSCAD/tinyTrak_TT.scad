@@ -1,8 +1,11 @@
 useN20s=false;
 
 /* [Hidden] */
-M577origDims= [1.37+1.57,0.575*2,0.65];
-factor=60;
+M577origDims= [1.37+1.57,0.575*2,0];
+factor=65;
+
+frntAxisX=36;
+
 fudge=0.1;
 
 axisWidth= 52;
@@ -19,7 +22,7 @@ translate([ -73.71, 26, 14 ])
     translate([-53,-11.2,0])
     import("DC_Motor_20mm.stl");
     
-translate([ 25.78, -26, 14 ])
+translate([ frntAxisX, -26, 14 ])
   rotate([-90,0,0]) 
   translate([-53,-11.2,0])
     import("DC_Motor_20mm.stl");
@@ -27,7 +30,7 @@ translate([ 25.78, -26, 14 ])
 
 
 
-%translate([-110,0,M577origDims[2]*factor/2-20])
+%translate([-110,0,M577origDims[2]*factor/2-4.3])
 rotate(90)
   scale(factor)
     import("M577body.stl");
@@ -49,7 +52,7 @@ translate([40,14,22])
   FPV1000TVL();
 
 //Track
-translate([25,-28,12]) rotate([90,90,0]) cogWheel();
+translate([frntAxisX,-28,12]) rotate([90,90,0]) cogWheel();
   
 module motorShield(){
   cube([59,43,19],true);
