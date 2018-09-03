@@ -91,7 +91,7 @@ module D1mini(){
   translate([0,0,height/2]) cube([25.6,34.2,height],true);
 }
 
-*cogWheel(true);
+!cogWheel(true);
 module cogWheel(showTrack=true){
   $fn=50;
   bearingDia=22;
@@ -102,14 +102,12 @@ module cogWheel(showTrack=true){
   X=5;
   
   impTrackOff=[-20,0,-5];
-  trackDia=7;
+  trackDia=6;
   
   if (showTrack)
   for (ang=[30:30:180])
   rotate(ang)  
-    translate([ovDia/2,0,ovThick/2]) 
-      rotate(75) translate(impTrackOff) 
-        rotate([90,0,0]) translate([10.7,0,0]) track();//import("Track.stl");
+      rotate([90,0,0]) translate([ovDia/2,0,0]) rotate([0,90+15,0]) track(ovDia,jntDia=5);//import("Track.stl");
   
   difference(){
     //cylinder(d=ovDia-ovDiaOffset,h=ovThick,center=true);
@@ -127,18 +125,22 @@ module cogWheel(showTrack=true){
 
 //projection(true) 
   //rotate([0,-90,0]) 
-    *translate([-3.1,0,0]) 
-      track();
-module track(){
+    //translate([-3.1,0,0]) 
+      
+
+
+
+module track(cogDia=20,cogAng=30,jntDia=6,showProfile=false){
   $fn=50;
   
   //Dimensions
   ovWdth=20; //36
-  ovLngth=9.3; //Length of Track from joint center2center
-  ovHght=5;    //body height above joint center
+  //ovLngth=9.3; //Length of Track from joint center2center
+  ovLngth=2*(cogDia/2)*sin(cogAng/2); //ovLength from Dia and Angle
+  ovHght=3;    //body height above joint center
   
   //joints
-  jntDia=6;
+  //jntDia=6;
   jntClrnc=0.5;//clearance between inner and outer joint cylinder
   inJntWdth=ovWdth*0.65;//width of inner joint cylinder
   outJntWdth=(ovWdth-inJntWdth)/2;
@@ -188,10 +190,12 @@ module track(){
     translate([ovLngth,(-ovHght+lckDpth)/2,ovWdth-outJntWdth/2+fudge/2]) cube([jntDia,ovHght+lckDpth+fudge,outJntWdth+fudge],true);
     
   }
-  translate([ovLngth-1.5,0,ovHght]) rotate([-90,0,prfAng]) 
-    profile(prfLngth,prfDia);
-  translate([ovLngth-1.5,0,ovHght]) rotate([90,0,-prfAng]) 
-    profile(prfLngth,prfDia);
+  if (showProfile){
+    translate([ovLngth-1.5,0,ovHght]) rotate([-90,0,prfAng]) 
+      profile(prfLngth,prfDia);
+    translate([ovLngth-1.5,0,ovHght]) rotate([90,0,-prfAng]) 
+      profile(prfLngth,prfDia);
+  }
 }
 
 //chamfer(3,20);
