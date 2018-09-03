@@ -1,5 +1,11 @@
 useN20s=false;
 
+/* [Show] */
+showCogWheel=true;
+showMotors=true;
+showBody=true;
+showChassis=true;
+
 /* [Hidden] */
 M577origDims= [1.37+1.57,0.575*2,0];
 factor=65;
@@ -16,12 +22,12 @@ if (useN20s){
   translate([ 25.20, -26, 11.48 ]) rotate([0,0,90]) import("N20_gear_motor.stl");
   translate([ -73.09, 26, 11.03 ]) rotate([0,0,-90]) import("N20_gear_motor.stl");  
 }
-else
+else if (showMotors)
 {
 translate([ axisBckX, axisMtrsY/2, axisHght ])
   rotate([90,180,0])
     translate([-53,-11.2,0])
-    color("purple") import("DC_Motor_20mm.stl");
+     color("purple") import("DC_Motor_20mm.stl");
     
 translate([ axisFrntX, -axisMtrsY/2, axisHght ])
   rotate([-90,0,0]) 
@@ -35,7 +41,12 @@ rotate(90)
   scale(factor)
     import("M577body.stl");
 
+if (showBody)
 %scale(23) import("M577bodydetail.stl");
+
+if (showChassis)
+  color("darkgrey")
+  chassis();
 
 //electronis  
 color("lightgreen")
@@ -57,7 +68,19 @@ translate([59,0,15])
     FPV1000TVL();
 
 //Track
+if (showCogWheel)
 translate([axisFrntX,-axisWdth/2,axisHght]) rotate([90,90,0]) cogWheel();
+
+
+module chassis(){
+  $fn=50;
+  translate([axisFrntX,-axisWdth/2-1,axisHght])
+    rotate([-90,0,0])
+    difference(){
+      cylinder(d=12,h=14);
+      translate([0,0,-fudge/2]) cylinder(d=9,h=14+fudge);
+    }
+}
   
 module motorShield(){
   cube([59,43,19],true);
@@ -80,7 +103,6 @@ module FPV(size="mini"){
   translate([0,0,17]) cylinder(d=14,h=10);
 }
 
-
 module FPV1000TVL(){
   $fn=50;
   translate([0,0,6]) cube([18,17.5,12],true);
@@ -89,38 +111,47 @@ module FPV1000TVL(){
   translate([-(18+2.5)/2,0,0]) cylinder(d=4,h=12);
 }
 
-
-
 module D1mini(){
   height=18;
   translate([0,0,height/2]) cube([25.6,34.2,height],true);
 }
 
-*cogWheel(true);
-module cogWheel(showTrack=true){
+*cogWheel();
+module cogWheel(showTrack=true,showBearing=true){
+  //https://www.banggood.com/6901ZZ-12x24x6mm-Steel-Sealed-Deep-Groove-Ball-Bearing-p-979798.html
+  
   $fn=50;
-  bearingDia=22;
-  bearingThick=7;
-  ovDia=30; //
+  bearingOutDia=24;
+  bearingInDia=12;
+  bearingThick=6;
+  ovDia=32; //
   ovDiaOffset=1.5;
   ovThick=10;
   X=5;
   
+  //motor Flange
+  motFlangeLngth=20;
+  
   impTrackOff=[-20,0,-5];
-  trackDia=7;
+  trackDia=6;
   
   if (showTrack)
-  for (ang=[30:30:180])
-  rotate(ang)  
-    translate([ovDia/2,0,ovThick/2]) 
-      rotate(75) translate(impTrackOff) 
-        rotate([90,0,0]) translate([10.7,0,0]) track();//import("Track.stl");
-  
+    for (ang=[30:30:180])
+    rotate(ang)  
+        rotate([90,0,0]) translate([ovDia/2,0,0]) rotate([0,90+15,0]) track(ovDia,jntDia=5);//import("Track.stl");
+  if (showBearing)
+    color("grey") translate([0,0,-X+fudge/2+bearingThick/2])
+    difference(){
+      cylinder(d=bearingOutDia,h=bearingThick,center=true);
+      cylinder(d=bearingInDia,h=bearingThick+fudge,center=true);
+    }
+  translate([0,0,-motFlangeLngth+ovThick/2]) rotate([0,0,90]) motAdapt(8,motFlangeLngth);  
+    
   difference(){
     //cylinder(d=ovDia-ovDiaOffset,h=ovThick,center=true);
     chamfWheel(ovDia-ovDiaOffset,ovThick,(ovThick-4)/2);
-    translate([0,0,-(ovThick+fudge)/2])cylinder(d=bearingDia,h=bearingThick+fudge);
-    cylinder(d=bearingDia-4,h=ovThick+fudge,center=true);
+    translate([0,0,-(ovThick+fudge)/2])cylinder(d=bearingOutDia,h=bearingThick+fudge);
+    cylinder(d=bearingOutDia-4,h=ovThick+fudge,center=true);
     
     for (ang=[0:30:330]){
       rotate(ang)
@@ -132,25 +163,29 @@ module cogWheel(showTrack=true){
 
 //projection(true) 
   //rotate([0,-90,0]) 
-    *translate([-3.1,0,0]) 
-      track();
-module track(){
+    //translate([-3.1,0,0]) 
+//track();
+
+module track(cogDia=30,cogAng=30,jntDia=5,showProfile=false){
   $fn=50;
   
   //Dimensions
-  ovWdth=18; //36
-  ovLngth=9.3; //Length of Track from joint center2center
-  ovHght=5;    //body height above joint center
+  ovWdth=20; //36
+  //ovLngth=9.3; //Length of Track from joint center2center
+  ovLngth=2*(cogDia/2)*sin(cogAng/2); //ovLength from Dia and Angle
+  ovHght=4;    //body height above joint center
   
   //joints
-  jntDia=5;
+  //jntDia=6;
   jntClrnc=0.5;//clearance between inner and outer joint cylinder
-  inJntWdth=ovWdth*0.65;//width of inner joint cylinder
+  inJntWdth=ovWdth*0.5;//width of inner joint cylinder
   outJntWdth=(ovWdth-inJntWdth)/2;
   lckDpth=(jntDia)/2; //locking depth below joint center
-  lckWdth=inJntWdth/3; //width of the locking feature
+  lckWdth=13/3; //width of the locking feature
   pinDia=1.75;
   echo("lckWdth",lckWdth);
+  
+  
   //Profile
   prfHght=1;   //Height of Profile
   prfAng=atan((jntDia/2)/(inJntWdth/2));     //Angle of Profile
@@ -193,16 +228,12 @@ module track(){
     translate([ovLngth,(-ovHght+lckDpth)/2,ovWdth-outJntWdth/2+fudge/2]) cube([jntDia,ovHght+lckDpth+fudge,outJntWdth+fudge],true);
     
   }
-  translate([ovLngth-1.5,0,ovHght]) rotate([-90,0,prfAng]) 
-    profile(prfLngth,prfDia);
-  translate([ovLngth-1.5,0,ovHght]) rotate([90,0,-prfAng]) 
-    profile(prfLngth,prfDia);
-}
-
-//chamfer(3,20);
-module chamfer(s,l){
-  linear_extrude(l)
-    polygon([[-fudge/2,-fudge/2],[-fudge/2,s+fudge/2],[s+fudge/2,-fudge/2]]);
+  if (showProfile){
+    translate([ovLngth-1.5,0,ovHght]) rotate([-90,0,prfAng]) 
+      profile(prfLngth,prfDia);
+    translate([ovLngth-1.5,0,ovHght]) rotate([90,0,-prfAng]) 
+      profile(prfLngth,prfDia);
+  }
 }
 
 module profile(lngth,dia){
@@ -226,10 +257,29 @@ module chamfWheel(dia, thck, chamf){
           );
 }
 
+module chamfer(s,l){
+  linear_extrude(l)
+    polygon([[-fudge/2,-fudge/2],[-fudge/2,s+fudge/2],[s+fudge/2,-fudge/2]]);
+}
+
 module microStepper(){
   $fn=50;
   //Pollin 310776
   cylinder(d=1.5,h=15); //axis
   cylinder(d=10,h=12); //motor
-  
+}
+
+//!motAdapt(7,10);
+module motAdapt(dia,length,depth=8){
+  $fn=80;
+  innerDia=5.4;
+  flatners=(innerDia-3.7)/2;
+  difference(){
+    cylinder(d=dia,h=length);
+    translate([0,0,-fudge]) difference(){
+      cylinder(d=innerDia,h=depth+fudge);
+      translate([0,(innerDia-flatners+fudge)/2,depth/2]) cube([innerDia,flatners+fudge,depth+2*fudge],true);
+      translate([0,-(innerDia-flatners+fudge)/2,depth/2]) cube([innerDia,flatners+fudge,depth+2*fudge],true);
+    }
+  }
 }
