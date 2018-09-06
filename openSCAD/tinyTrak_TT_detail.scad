@@ -1,7 +1,7 @@
 useN20s=false;
 
 /* [Show] */
-showCogWheel=true;
+showCogWheels=true;
 showMotors=true;
 showBody=true;
 showChassis=true;
@@ -37,9 +37,9 @@ translate([ axisFrntX, -axisMtrsY/2, axisHght ])
 
 
 *translate([-110,0,M577origDims[2]*factor/2-4.3])
-rotate(90)
-  scale(factor)
-    import("M577body.stl");
+  rotate(90)
+    scale(factor)
+      import("M577body.stl");
 
 if (showBody)
 %scale(23) import("M577bodydetail.stl");
@@ -68,9 +68,11 @@ translate([59,0,15])
     FPV1000TVL();
 
 //Track
-if (showCogWheel)
-translate([axisFrntX,-axisWdth/2,axisHght]) rotate([90,90,0]) cogWheel();
-
+if (showCogWheels)
+  translate([axisFrntX,-axisWdth/2,axisHght]) rotate([90,90,0]) cogWheel(showTrack=true,driveWheel=true); //front right
+  translate([axisBckX,-axisWdth/2,axisHght]) rotate([90,-90,0]) cogWheel(showTrack=true,driveWheel=false);//back right
+  translate([axisFrntX,axisWdth/2,axisHght]) rotate([-90,-90,0]) cogWheel(showTrack=true,driveWheel=false); //front left
+  translate([axisBckX,axisWdth/2,axisHght]) rotate([-90,90,0]) cogWheel(showTrack=true,driveWheel=true); //front left
 
 module chassis(){
   $fn=50;
@@ -116,42 +118,55 @@ module D1mini(){
   translate([0,0,height/2]) cube([25.6,34.2,height],true);
 }
 
-*cogWheel();
-module cogWheel(showTrack=true,showBearing=true){
+
+module FireFly(){
+  //FireFly micro Cam
+  //https://www.gearbest.com/action-cameras/pp_1588214.html
+  cube([32,24,24],true);
+}
+
+
+module cogWheel(showTrack=false,showBearing=true,driveWheel=false){
   //https://www.banggood.com/6901ZZ-12x24x6mm-Steel-Sealed-Deep-Groove-Ball-Bearing-p-979798.html
+  //https://www.pollin.de/p/kugellager-608zz-440430 --> 8x22x7mm 0,90€
   
   $fn=50;
-  bearingOutDia=24;
-  bearingInDia=12;
-  bearingThick=6;
+  bearingOutDia=22;
+  bearingInDia=8;
+  bearingThick=7;
   ovDia=32; //
   ovDiaOffset=1.5;
   ovThick=10;
-  X=5;
+  
+  //bearing to top or bottom
+  bearingZPos=  driveWheel ? -(bearingThick-ovThick)/2 +fudge : (bearingThick-ovThick)/2 -fudge;
   
   //motor Flange
-  motFlangeLngth=20;
+  motFlangeLngth=10;
   
   impTrackOff=[-20,0,-5];
   trackDia=6;
   
   if (showTrack)
-    for (ang=[30:30:180])
-    rotate(ang)  
+    for (ang=[0:30:150])
+      rotate(ang)  
         rotate([90,0,0]) translate([ovDia/2,0,0]) rotate([0,90+15,0]) track(ovDia,jntDia=5);//import("Track.stl");
+    
   if (showBearing)
-    color("grey") translate([0,0,-X+fudge/2+bearingThick/2])
+    color("grey") translate([0,0,bearingZPos])
     difference(){
       cylinder(d=bearingOutDia,h=bearingThick,center=true);
       cylinder(d=bearingInDia,h=bearingThick+fudge,center=true);
     }
-  translate([0,0,-motFlangeLngth+ovThick/2]) rotate([0,0,90]) motAdapt(8,motFlangeLngth);  
+  
+  if (driveWheel)  
+    translate([0,0,-motFlangeLngth-ovThick/2+fudge]) rotate([0,0,90]) motAdapt(8,motFlangeLngth);  
     
   difference(){
     //cylinder(d=ovDia-ovDiaOffset,h=ovThick,center=true);
     chamfWheel(ovDia-ovDiaOffset,ovThick,(ovThick-4)/2);
-    translate([0,0,-(ovThick+fudge)/2])cylinder(d=bearingOutDia,h=bearingThick+fudge);
-    cylinder(d=bearingOutDia-4,h=ovThick+fudge,center=true);
+    translate([0,0,bearingZPos])cylinder(d=bearingOutDia,h=bearingThick+fudge,center=true);
+    translate([0,0,ovThick-bearingThick-1]) cylinder(d=bearingOutDia-4,h=ovThick+fudge,center=true);
     
     for (ang=[0:30:330]){
       rotate(ang)
