@@ -98,6 +98,18 @@ module batX1(){
   cube([50,18,25],true);
 }
 
+!batJM1();
+module batJM1(){
+  
+  ovWdth=44;
+  ovHght=4;
+  ovLngth=65;
+  
+  union(){
+    translate([ovWdth/2,0,0]) rotate([90,0,0]) cylinder(d=ovHght,h=ovLngth,center=true);
+  }
+}
+
 module FPV(size="mini"){
   //standard=28mm, mini=21, micro=19mm
   dim= size=="standard" ? 28 : size == "mini" ? 21 : 19;
