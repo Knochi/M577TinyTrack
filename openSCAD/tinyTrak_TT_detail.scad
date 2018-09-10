@@ -5,10 +5,28 @@ showCogWheels=true;
 showMotors=true;
 showBody=true;
 showChassis=true;
+showBattery=true;
+batteryType="JM1"; //[JM1,X1,18650,AirSoft]
+showPCB=true;
+
+
+/* [Track] */
+cogWheelDia=32;
+//trackWdth=1;
+//trackLngth=1;
+
+/* [Positions]  */
+posPCB=[-78,0,28];
+posJM1Bat=[-20,0,43];
+posX1Bat=[-20,0,43];
+pos18650Bat=[-18,12,20];
+posASBat=[0,0,20];
 
 /* [Hidden] */
 M577origDims= [1.37+1.57,0.575*2,0];
 factor=65;
+
+
 
 axisFrntX=36.7;
 axisBckX=-73.7;
@@ -35,7 +53,6 @@ translate([ axisFrntX, -axisMtrsY/2, axisHght ])
     color("purple") import("DC_Motor_20mm.stl");
 }
 
-
 *translate([-110,0,M577origDims[2]*factor/2-4.3])
   rotate(90)
     scale(factor)
@@ -48,18 +65,31 @@ if (showChassis)
   color("darkgrey")
   chassis();
 
-//electronis  
-color("lightgreen")
-translate([-80,-12,33])
-  rotate([90,0,-90])
-  //motorShield();
-import("WEMOS_D1mini.stl");
-
-
-
-//batteries
-color("orange") translate([-17,-23,axisHght]) batX1();
-
+if (showBattery){
+  
+  if (batteryType=="JM1")
+   color("orange")
+    translate(posJM1Bat) rotate(90) {
+      translate([0,0,-2])batJM1();
+      translate([0,0,2]) batJM1();
+    }
+  if (batteryType=="X1")
+    color("orange") translate([-17,-23,axisHght]) batX1();
+  }
+  if (batteryType=="18650")
+    color("orange") translate([pos18650Bat[0],0,pos18650Bat[2]]) rotate(0){
+      translate([0,9+pos18650Bat[1],0]) bat18650();
+      translate([0,-(9+pos18650Bat[1]),0]) bat18650();
+      }
+  if (batteryType=="AirSoft")
+    color("orange") translate(posASBat) batTNano();
+  
+//electronis
+if (showPCB)
+  color("lightgreen")
+    translate([-34.5/2,-25.6/2,0]+posPCB)
+      rotate([90,0,-90])
+        import("WEMOS_D1mini.stl");
 
 //FPV Cam
 color("lightblue")
@@ -68,11 +98,19 @@ translate([59,0,15])
     FPV1000TVL();
 
 //Track
-if (showCogWheels)
+if (showCogWheels){
   translate([axisFrntX,-axisWdth/2,axisHght]) rotate([90,90,0]) cogWheel(showTrack=true,driveWheel=true); //front right
   translate([axisBckX,-axisWdth/2,axisHght]) rotate([90,-90,0]) cogWheel(showTrack=true,driveWheel=false);//back right
   translate([axisFrntX,axisWdth/2,axisHght]) rotate([-90,-90,0]) cogWheel(showTrack=true,driveWheel=false); //front left
   translate([axisBckX,axisWdth/2,axisHght]) rotate([-90,90,0]) cogWheel(showTrack=true,driveWheel=true); //front left
+  
+  for (i=[0:8.3:axisFrntX-axisBckX-8]){
+    translate([axisFrntX-i,-axisWdth/2,axisHght+cogWheelDia/2]) rotate(180) track(cogWheelDia,jntDia=5);//top right
+    translate([axisFrntX-i-8.3,axisWdth/2,axisHght+cogWheelDia/2]) rotate([0,0,0]) track(cogWheelDia,jntDia=5);//top left
+    translate([axisFrntX-i-8.3,-axisWdth/2,axisHght-cogWheelDia/2]) rotate([180,0,0]) track(cogWheelDia,jntDia=5);//bottom right
+    translate([axisFrntX-i,axisWdth/2,axisHght-cogWheelDia/2]) rotate([180,0,180]) track(cogWheelDia,jntDia=5);//bottom left
+  }
+}
 
 module chassis(){
   $fn=50;
@@ -98,15 +136,27 @@ module batX1(){
   cube([50,18,25],true);
 }
 
-!batJM1();
+module batTNano(){
+  /*
+  cube([45,17,12],true); //Turnigy Nano 300mAh
+  cube([56,30.5,9.8],true); //Turnigy Nano 350mAh
+  cube([63,32,9],true); //Turnigy Nano 370mAh
+  cube([55,30,10],true); //Turnigy Nano 460mAh
+  */
+  cube([127,20,12],true); //Turningy Nano Airsoft 1200mAh (NG1200A.2S.15)
+}
+
+*batJM1();
 module batJM1(){
-  
+  $fn=30;
   ovWdth=44;
   ovHght=4;
   ovLngth=65;
   
   union(){
-    translate([ovWdth/2,0,0]) rotate([90,0,0]) cylinder(d=ovHght,h=ovLngth,center=true);
+    translate([(ovWdth-ovHght)/2,0,0]) rotate([90,0,0]) cylinder(d=ovHght,h=ovLngth,center=true);
+    translate([-(ovWdth-ovHght)/2,0,0]) rotate([90,0,0]) cylinder(d=ovHght,h=ovLngth,center=true);
+    cube([ovWdth-ovHght,ovLngth,ovHght],true);
   }
 }
 
@@ -210,9 +260,7 @@ module track(cogDia=30,cogAng=30,jntDia=5,showProfile=false){
   lckDpth=(jntDia)/2; //locking depth below joint center
   lckWdth=13/3; //width of the locking feature
   pinDia=1.75;
-  echo("lckWdth",lckWdth);
-  
-  
+    
   //Profile
   prfHght=1;   //Height of Profile
   prfAng=atan((jntDia/2)/(inJntWdth/2));     //Angle of Profile
@@ -222,8 +270,7 @@ module track(cogDia=30,cogAng=30,jntDia=5,showProfile=false){
   prfY2=ovWdth;
   prfLngth=prfX2/sin(prfAng);
   prfDia=2.5;
-  echo(prfAng,prfLngth);
-  
+    
   fudge=0.1;
   
   //%rotate([90,0,0])translate([-10.7,0,0]) import("Track.stl");
