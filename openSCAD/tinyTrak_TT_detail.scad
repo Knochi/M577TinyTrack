@@ -1,13 +1,15 @@
-useN20s=false;
+
 
 /* [Show] */
 showCogWheels=true;
 showMotors=true;
+motorType="TT"; //[TT,N20]
+showTracks=true;
 showBody=true;
 showChassis=true;
-showBattery=true;
-batteryType="JM1"; //[JM1,X1,18650,AirSoft]
 showPCB=true;
+showBattery=true;
+batteryType="AirSoft"; //[JM1,X1,18650,AirSoft]
 
 
 /* [Track] */
@@ -20,37 +22,42 @@ posPCB=[-78,0,28];
 posJM1Bat=[-20,0,43];
 posX1Bat=[-20,0,43];
 pos18650Bat=[-18,12,20];
-posASBat=[0,0,20];
+posASBat=[0,0,35];
+
+
+
+/* [Axis Parameters] */
+axisFrntX=36.7;
+axisBckX=-73.7;
+axisWdth= 51;
+axisMtrsY= 43;
+axisHght=18;
 
 /* [Hidden] */
 M577origDims= [1.37+1.57,0.575*2,0];
 factor=65;
+N20axsLngth=9.3;
+TTaxsLngth=8.3;
 
-
-
-axisFrntX=36.7;
-axisBckX=-73.7;
-axisWdth= 51;
-axisMtrsY= 36.5;
-axisHght=18;
 
 fudge=0.1;
 
-if (useN20s){
-  translate([ 25.20, -26, 11.48 ]) rotate([0,0,90]) import("N20_gear_motor.stl");
-  translate([ -73.09, 26, 11.03 ]) rotate([0,0,-90]) import("N20_gear_motor.stl");  
-}
-else if (showMotors)
-{
-translate([ axisBckX, axisMtrsY/2, axisHght ])
-  rotate([90,180,0])
-    translate([-53,-11.2,0])
-     color("purple") import("DC_Motor_20mm.stl");
-    
-translate([ axisFrntX, -axisMtrsY/2, axisHght ])
-  rotate([-90,0,0]) 
-  translate([-53,-11.2,0])
-    color("purple") import("DC_Motor_20mm.stl");
+color("purple")
+if (showMotors){
+  if (motorType == "N20") {
+  translate([ axisFrntX, -axisMtrsY/2, axisHght ]) rotate([0,0,90]) import("N20_gear_motor.stl"); //front motor
+  translate([ axisBckX, axisMtrsY/2, axisHght ]) rotate([0,0,-90]) import("N20_gear_motor.stl");  
+  }
+  else if (motorType == "TT")
+  {
+    translate([ axisBckX, axisMtrsY/2, axisHght ])
+      rotate([180,180,0]) TTMotor();
+    //translate([-53,-11.2,0]) import("DC_Motor_20mm.stl");
+        
+    translate([ axisFrntX, -axisMtrsY/2, axisHght ])
+      rotate([0,0,0]) TTMotor();
+    //translate([-53,-11.2,0]) import("DC_Motor_20mm.stl");
+  } 
 }
 
 *translate([-110,0,M577origDims[2]*factor/2-4.3])
@@ -75,7 +82,7 @@ if (showBattery){
     }
   if (batteryType=="X1")
     color("orange") translate([-17,-23,axisHght]) batX1();
-  }
+  
   if (batteryType=="18650")
     color("orange") translate([pos18650Bat[0],0,pos18650Bat[2]]) rotate(0){
       translate([0,9+pos18650Bat[1],0]) bat18650();
@@ -83,7 +90,7 @@ if (showBattery){
       }
   if (batteryType=="AirSoft")
     color("orange") translate(posASBat) batTNano();
-  
+}
 //electronis
 if (showPCB)
   color("lightgreen")
@@ -97,13 +104,16 @@ translate([59,0,15])
   rotate([90,0,90])
     FPV1000TVL();
 
+
+
 //Track
 if (showCogWheels){
-  translate([axisFrntX,-axisWdth/2,axisHght]) rotate([90,90,0]) cogWheel(showTrack=true,driveWheel=true); //front right
-  translate([axisBckX,-axisWdth/2,axisHght]) rotate([90,-90,0]) cogWheel(showTrack=true,driveWheel=false);//back right
-  translate([axisFrntX,axisWdth/2,axisHght]) rotate([-90,-90,0]) cogWheel(showTrack=true,driveWheel=false); //front left
-  translate([axisBckX,axisWdth/2,axisHght]) rotate([-90,90,0]) cogWheel(showTrack=true,driveWheel=true); //front left
+  translate([axisFrntX,-axisWdth/2,axisHght]) rotate([90,90,0]) cogWheel(showTrack=showTracks,driveWheel=true); //front right
+  translate([axisBckX,-axisWdth/2,axisHght]) rotate([90,-90,0]) cogWheel(showTrack=showTracks,driveWheel=false);//back right
+  translate([axisFrntX,axisWdth/2,axisHght]) rotate([-90,-90,0]) cogWheel(showTrack=showTracks,driveWheel=false); //front left
+  translate([axisBckX,axisWdth/2,axisHght]) rotate([-90,90,0]) cogWheel(showTrack=showTracks,driveWheel=true); //front left
   
+  if (showTracks)
   for (i=[0:8.3:axisFrntX-axisBckX-8]){
     translate([axisFrntX-i,-axisWdth/2,axisHght+cogWheelDia/2]) rotate(180) track(cogWheelDia,jntDia=5);//top right
     translate([axisFrntX-i-8.3,axisWdth/2,axisHght+cogWheelDia/2]) rotate([0,0,0]) track(cogWheelDia,jntDia=5);//top left
@@ -112,14 +122,80 @@ if (showCogWheels){
   }
 }
 
+//TTMotor();
+module TTMotor(drill=0,axs=false,recess=false){
+  $fn=50;
+  shaftLngth=8;
+  shaftDia=5.4;
+  axsLngth=8.8;
+  axsDia=7.2;
+  lckFeatXOff=11;
+  lckFeatDia=4;
+  lckFeatHght=2;
+  drillXOff=20.3; //31.8-11.2 from datasheet
+  drillZOff=17.5/2;
+  drillDia=3.2;
+  
+  if (!(axs || recess || drill)){
+  rotate([-90,0,0]) translate([-53,-11.2,0])
+        import("DC_Motor_20mm.stl");
+    //2nd axis
+    translate([0,27.5,0]) rotate([-90,0,0]) cylinder(d=shaftDia,h=axsLngth);
+  }
+  
+  if (axs){
+    translate([0,axsLngth,0]) rotate([90,0,0]) cylinder(d=axsDia+fudge,h=axsLngth+fudge);
+  }
+  
+  if (recess){
+    translate([-lckFeatXOff,axsLngth,0]) rotate([90,0,0]) cylinder(d=lckFeatDia+fudge,h=lckFeatHght+fudge);
+    translate([-33+2,axsLngth-0.75,0]) cube([4,1.4,5],true);
+  }
+  
+  if (drill) {
+    translate([-drillXOff,axsLngth-fudge,drillZOff]) rotate([90,0,0]) cylinder(d=drillDia,h=drill+fudge);
+    translate([-drillXOff,axsLngth-fudge,-drillZOff]) rotate([90,0,0]) cylinder(d=drillDia,h=drill+fudge);
+  }
+  
+}
+
 module chassis(){
   $fn=50;
-  translate([axisFrntX,-axisWdth/2-1,axisHght])
-    rotate([-90,0,0])
+  minWallThick=1.6; //minimum Wall Thickness
+  axsDist=(axisFrntX-axisBckX);
+  ovLngth=axsDist+38;
+  ovWdth=13*2+minWallThick*2;
+  ovHght=22.5+2*minWallThick;
+  xOffset=axisFrntX-axsDist/2;
+  
+  axisLngth=5+axisWdth/2-ovWdth/2-fudge;
+  
+  translate([0,0,axisHght])
     difference(){
-      cylinder(d=12,h=14);
-      translate([0,0,-fudge/2]) cylinder(d=9,h=14+fudge);
+      union(){
+        translate([xOffset,0,0]) cube([ovLngth,ovWdth,ovHght],true); //chassis body
+        translate([axisFrntX,ovWdth/2-fudge,0]) cube([15,8,ovHght],true);
+      }
+      translate([xOffset,0,(minWallThick+fudge)/2]) 
+        cube([ovLngth-minWallThick*2,ovWdth-minWallThick*2,ovHght-minWallThick+fudge],true); //hollow
+      translate([axisFrntX,-axisMtrsY/2,0]) rotate([0,0,0]) TTMotor(drill=6,axs=true,recess=true); //openings for frnt TT Motor
+      translate([axisFrntX,ovWdth/2-fudge,minWallThick/2]) cube([8,4,ovHght-minWallThick+fudge],true);
     }
+    
+    //holders for undriven cogwheels
+    translate([axisFrntX,ovWdth/2-fudge,axisHght]){
+        rotate([-90,0,0]){
+          cylinder(d=8,h=axisLngth+fudge);//frnt
+          cylinder(d=10,h=5.8+fudge);//frnt
+        }
+      }
+      
+    
+    translate([axisBckX,-(ovWdth/2-fudge),axisHght]) rotate([90,0,0]){
+      cylinder(d=8,h=axisLngth+fudge);//frnt
+      cylinder(d=10,h=5.8+fudge);//frnt
+    }
+    
 }
   
 module motorShield(){
@@ -344,6 +420,7 @@ module microStepper(){
 }
 
 //!motAdapt(7,10);
+
 module motAdapt(dia,length,depth=8){
   $fn=80;
   innerDia=5.4;
