@@ -8,6 +8,7 @@ showTracks=true;
 showBody=true;
 showChassis=true;
 showPCB=true;
+showFPV=true;
 showBattery=true;
 batteryType="AirSoft"; //[JM1,X1,18650,AirSoft]
 
@@ -70,7 +71,7 @@ if (showBody)
 
 if (showChassis)
   color("darkgrey")
-  chassis();
+    translate([axisFrntX,0,axisHght]) chassis();
 
 if (showBattery){
   
@@ -99,6 +100,7 @@ if (showPCB)
         import("WEMOS_D1mini.stl");
 
 //FPV Cam
+if (showFPV)
 color("lightblue")
 translate([59,0,15])
   rotate([90,0,90])
@@ -163,38 +165,38 @@ module chassis(){
   $fn=50;
   minWallThick=1.6; //minimum Wall Thickness
   axsDist=(axisFrntX-axisBckX);
-  ovLngth=axsDist+38;
+  //ovLngth=axsDist+38;
+  ovLngth=71+minWallThick*2;
   ovWdth=13*2+minWallThick*2;
   ovHght=22.5+2*minWallThick;
   xOffset=axisFrntX-axsDist/2;
   
   axisLngth=5+axisWdth/2-ovWdth/2-fudge;
   
-  translate([0,0,axisHght])
+  //debug motor
+ *translate([0,-21.77,0]) TTMotor();
+  
+  translate([0,0,0])
     difference(){
       union(){
         translate([xOffset,0,0]) cube([ovLngth,ovWdth,ovHght],true); //chassis body
-        translate([axisFrntX,ovWdth/2-fudge,0]) cube([15,8,ovHght],true);
+        translate([0,ovWdth/2-fudge,0]) cube([15,8,ovHght],true);
       }
       translate([xOffset,0,(minWallThick+fudge)/2]) 
         cube([ovLngth-minWallThick*2,ovWdth-minWallThick*2,ovHght-minWallThick+fudge],true); //hollow
-      translate([axisFrntX,-axisMtrsY/2,0]) rotate([0,0,0]) TTMotor(drill=6,axs=true,recess=true); //openings for frnt TT Motor
-      translate([axisFrntX,ovWdth/2-fudge,minWallThick/2]) cube([8,4,ovHght-minWallThick+fudge],true);
+      translate([0,-axisMtrsY/2,0]) 
+        rotate([0,0,0]) TTMotor(drill=6,axs=true,recess=true); //openings for TT Motor
+      translate([0,ovWdth/2-fudge,minWallThick/2]) 
+        cube([8,4,ovHght-minWallThick+fudge],true);
     }
     
     //holders for undriven cogwheels
-    translate([axisFrntX,ovWdth/2-fudge,axisHght]){
+    translate([0,ovWdth/2+2,0]){
         rotate([-90,0,0]){
           cylinder(d=8,h=axisLngth+fudge);//frnt
-          cylinder(d=10,h=5.8+fudge);//frnt
+          cylinder(d=10,h=3.8+fudge);//frnt
         }
       }
-      
-    
-    translate([axisBckX,-(ovWdth/2-fudge),axisHght]) rotate([90,0,0]){
-      cylinder(d=8,h=axisLngth+fudge);//frnt
-      cylinder(d=10,h=5.8+fudge);//frnt
-    }
     
 }
   
